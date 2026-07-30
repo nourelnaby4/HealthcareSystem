@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+**/out/
+**/node_modules/
+**/dist/
+.git/
+.vs/
+.vscode/
+.github/
+docs/
+**/*.log

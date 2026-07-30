@@ -1,32 +1,10 @@
 <Solution>
   <Folder Name="/backend/" />
   <Folder Name="/backend/src/" />
-  <Folder Name="/backend/src/Bootsrapper/">
+  <Folder Name="/backend/src/Bootstrapper/">
     <Project Path="backend/src/Bootstrapper/Healthcare.Api/Healthcare.Api.csproj" />
   </Folder>
+  <Folder Name="/frontend/" />
   <Folder Name="/docker/" />
   <Folder Name="/docs/" />
-  <Folder Name="/frontend/">
-    <Project Path="frontend/healthcare-web/" Type="Website" DisplayName="healthcare-web">
-      <BuildType Project="Debug" />
-      <Properties Name="WebsiteProperties">
-        <Property Name="Debug.AspNetCompiler.Debug" Value="&quot;True&quot;" />
-        <Property Name="Debug.AspNetCompiler.FixedNames" Value="&quot;false&quot;" />
-        <Property Name="Debug.AspNetCompiler.ForceOverwrite" Value="&quot;true&quot;" />
-        <Property Name="Debug.AspNetCompiler.PhysicalPath" Value="&quot;frontend\healthcare-web\&quot;" />
-        <Property Name="Debug.AspNetCompiler.TargetPath" Value="&quot;PrecompiledWeb\localhost_63375\&quot;" />
-        <Property Name="Debug.AspNetCompiler.Updateable" Value="&quot;true&quot;" />
-        <Property Name="Debug.AspNetCompiler.VirtualPath" Value="&quot;/localhost_63375&quot;" />
-        <Property Name="Release.AspNetCompiler.Debug" Value="&quot;False&quot;" />
-        <Property Name="Release.AspNetCompiler.FixedNames" Value="&quot;false&quot;" />
-        <Property Name="Release.AspNetCompiler.ForceOverwrite" Value="&quot;true&quot;" />
-        <Property Name="Release.AspNetCompiler.PhysicalPath" Value="&quot;frontend\healthcare-web\&quot;" />
-        <Property Name="Release.AspNetCompiler.TargetPath" Value="&quot;PrecompiledWeb\localhost_63375\&quot;" />
-        <Property Name="Release.AspNetCompiler.Updateable" Value="&quot;true&quot;" />
-        <Property Name="Release.AspNetCompiler.VirtualPath" Value="&quot;/localhost_63375&quot;" />
-        <Property Name="TargetFrameworkMoniker" Value="&quot;.NETFramework,Version%3Dv4.8&quot;" />
-        <Property Name="VWDPort" Value="&quot;63375&quot;" />
-      </Properties>
-    </Project>
-  </Folder>
 </Solution>

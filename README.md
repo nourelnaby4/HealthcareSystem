@@ -24,6 +24,17 @@ Modules integrate via **integration events** on an in-process bus (Outbox/Inbox)
 - Frontend: `frontend/healthcare-web` — **Angular** + **Tailwind CSS**
 - Containerized via `docker/`
 
+## 🔄 CI/CD (GitHub Actions)
+
+Single pipeline in `.github/workflows/automation-cicd.yml`, triggered on push/PR to `main`, `master`, `production`:
+
+1. **build-and-test** — CodeQL (C#), `dotnet format` verify, NuGet vulnerability check, `dotnet restore/build/test` with coverage, then CodeQL analysis.
+2. **frontend** *(parallel)* — Angular `npm ci`, `npm run build`, and tests (if specs exist).
+3. **push-to-dockerhub** *(push to main/master only, after 1 & 2)* — builds the `Healthcare.Api` image (GHA-cached) and pushes to **Docker Hub** (`<user>/healthcare-api:latest` + `:<sha>`).
+4. **deploy-to-render** — triggers the **Render** deploy webhook.
+
+**Required GitHub secrets:** `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `RENDER_DEPLOY_HOOK`.
+
 ## 📁 Repository Layout
 
 ```
