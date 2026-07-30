@@ -4,9 +4,6 @@
   <Folder Name="/backend/src/Bootsrapper/">
     <Project Path="backend/src/Bootstrapper/Healthcare.Api/Healthcare.Api.csproj" />
   </Folder>
-  <Folder Name="/backend/src/BuildingBlocks/" />
-  <Folder Name="/backend/src/Modules/" />
-  <Folder Name="/backend/test/" />
   <Folder Name="/docker/" />
   <Folder Name="/docs/" />
   <Folder Name="/frontend/">
