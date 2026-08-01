@@ -1,4 +1,65 @@
+<!--
+Sync Impact Report
+==================
+Version change: 1.0.0 (unversioned baseline) → 1.1.0 → 1.2.0 → 1.3.0
+Bump type:
+  - 1.0.0 → 1.1.0 (MINOR): added the Standards Reference (Controlled Documents) catalog and the Governance section.
+  - 1.1.0 → 1.2.0 (MINOR): materially expanded docs/angular-guidelines.md — mandated Tailwind + HTML templates + SCSS, and the full modular architecture (core, interceptors, shared, layouts, interfaces, features → pages/components/services/routes).
+  - 1.2.0 → 1.3.0 (MINOR): split the frontend architecture into its own controlled document docs/frontend-architecture.md (styling stack + modular structure), slimmed docs/angular-guidelines.md to coding rules only, and cross-linked both.
+
+Modified principles: none renamed. Added cross-references from each principle to its detailed controlled document.
+
+Modified controlled documents:
+  - docs/angular-guidelines.md → architecture & styling content moved to docs/frontend-architecture.md; now rules-only with cross-reference.
+  - docs/frontend-architecture.md → new (owns styling stack + modular structure + layer responsibilities).
+
+Added sections:
+  - Standards Reference (Controlled Documents)
+  - Governance (amendment procedure, versioning policy, compliance review)
+
+Removed sections: none.
+
+New controlled documents (docs/):
+  - docs/architecture.md          → governs Principles 1, 2, 6
+  - docs/coding-standards.md      → governs Principles 10, 11, 19, 23
+  - docs/backend-guidelines.md    → governs Principles 3, 4, 5, 7, 13, 14
+  - docs/angular-guidelines.md    → governs Principles 16, 17 (rules)
+  - docs/frontend-architecture.md → governs Principles 16, 17 (structure & styling)
+  - docs/api-design.md            → governs Principle 8
+  - docs/security.md              → governs Principles 9, 10, 11, 12
+  - docs/testing.md               → governs Principle 15
+  - docs/naming.md                → governs Principle 18
+
+Templates requiring updates:
+  - .specify/templates/constitution-template.md   ✅ unchanged (generic, still valid)
+  - .specify/templates/spec-template.md            ⚠ optional: may add a "Standards Compliance" note (deferred, low priority)
+  - .specify/templates/plan-template.md            ✅ unchanged
+  - .specify/templates/tasks-template.md           ✅ unchanged
+
+Follow-up TODOs: none.
+-->
+
 # Healthcare System Constitution
+
+## Standards Reference (Controlled Documents)
+
+The detailed, enforceable rules live in `docs/`. These documents are **controlled** by this Constitution: every principle below links to its authoritative document, and the Constitution is the supreme authority when any conflict arises.
+
+| Document | Path | Governs Principles |
+|----------|------|--------------------|
+| Architecture | [docs/architecture.md](../../docs/architecture.md) | 1, 2, 6 |
+| Backend Guidelines | [docs/backend-guidelines.md](../../docs/backend-guidelines.md) | 3, 4, 5, 7, 13, 14 |
+| API Design | [docs/api-design.md](../../docs/api-design.md) | 8 |
+| Security | [docs/security.md](../../docs/security.md) | 9, 10, 11, 12 |
+| Coding Standards | [docs/coding-standards.md](../../docs/coding-standards.md) | 10, 11, 19, 23 |
+| Testing | [docs/testing.md](../../docs/testing.md) | 15 |
+| Angular Guidelines | [docs/angular-guidelines.md](../../docs/angular-guidelines.md) | 16, 17 |
+| Frontend Architecture | [docs/frontend-architecture.md](../../docs/frontend-architecture.md) | 16, 17 |
+| Naming | [docs/naming.md](../../docs/naming.md) | 18 |
+
+**Rule:** Any change to a controlled document that alters a governing rule requires a Constitution amendment (see Governance). New standards become controlled only by being listed here.
+
+---
 
 ## Project Vision
 
@@ -13,6 +74,8 @@ The AI must behave as an experienced Software Architect and Senior Full Stack En
 # Principle 1 — Architecture First
 
 Architecture is never compromised.
+
+> Authoritative detail: [docs/architecture.md](../../docs/architecture.md)
 
 The project follows:
 
@@ -133,6 +196,8 @@ Domain never depends on Infrastructure.
 
 # Principle 7 — Backend Standards
 
+> Authoritative detail: [docs/backend-guidelines.md](../../docs/backend-guidelines.md)
+
 Use:
 
 - .NET 10
@@ -153,6 +218,8 @@ Never block threads.
 ---
 
 # Principle 8 — API Design
+
+> Authoritative detail: [docs/api-design.md](../../docs/api-design.md)
 
 RESTful APIs.
 
@@ -175,6 +242,8 @@ API versioning when needed.
 ---
 
 # Principle 9 — Validation
+
+> Authoritative detail: [docs/security.md](../../docs/security.md) (input) · [docs/backend-guidelines.md](../../docs/backend-guidelines.md) (FluentValidation)
 
 Every command has FluentValidation.
 
@@ -219,6 +288,8 @@ Every important action should be logged.
 ---
 
 # Principle 12 — Security
+
+> Authoritative detail: [docs/security.md](../../docs/security.md)
 
 Security is mandatory.
 
@@ -280,6 +351,8 @@ Relationships must enforce integrity.
 
 # Principle 15 — Testing
 
+> Authoritative detail: [docs/testing.md](../../docs/testing.md)
+
 Every feature requires tests.
 
 Generate:
@@ -295,6 +368,8 @@ No placeholder tests.
 ---
 
 # Principle 16 — Angular
+
+> Authoritative detail: [docs/frontend-architecture.md](../../docs/frontend-architecture.md) (structure & styling) · [docs/angular-guidelines.md](../../docs/angular-guidelines.md) (rules)
 
 Frontend uses:
 
@@ -341,6 +416,8 @@ Proper user feedback.
 ---
 
 # Principle 18 — Naming
+
+> Authoritative detail: [docs/naming.md](../../docs/naming.md)
 
 Use meaningful names.
 
@@ -470,3 +547,33 @@ If any request conflicts with this Constitution,
 the Constitution always takes precedence.
 
 The AI should act as an experienced Enterprise Software Architect focused on long-term maintainability rather than short-term implementation speed.
+
+---
+
+# Governance
+
+This Constitution is the supreme authority for all generated work in the project. Where any request, instruction, or convenience conflicts with it, **the Constitution always takes precedence**.
+
+## Amendment Procedure
+
+1. Propose the change as a documented issue/ADR (under `docs/adr/` when architectural).
+2. Update the affected controlled document(s) in `docs/`.
+3. Update this Constitution: edit the principle and/or the Standards Reference table.
+4. Bump the version per the policy below and refresh the Sync Impact Report (HTML comment at the top of this file).
+5. Update dependent templates if a principle's structure changed.
+
+## Versioning Policy (Semantic Versioning)
+
+- **MAJOR**: backward-incompatible governance — a principle removed or redefined.
+- **MINOR**: a new principle/section added, or materially expanded guidance (e.g., a new controlled document).
+- **PATCH**: clarifications, wording, typo fixes, non-semantic refinements.
+
+## Compliance Review
+
+- Every spec, plan, and task list produced by Spec Kit MUST cite and conform to the controlled documents above.
+- Code review verifies compliance with the Constitution and its controlled documents.
+- Complexity or deviation must be justified; undocumented deviation is non-compliant.
+
+---
+
+**Version**: 1.3.0 | **Ratified**: 2026-08-01 | **Last Amended**: 2026-08-01

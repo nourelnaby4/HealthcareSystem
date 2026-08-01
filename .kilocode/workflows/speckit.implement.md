@@ -2,6 +2,18 @@
 description: Execute the implementation plan by processing and executing all tasks defined in tasks.md
 ---
 
+# Implementation Rules
+
+Before writing code:
+
+- Read the Constitution.
+- Read all relevant documents under `/docs`.
+- Read the approved specification.
+- Follow DDD, CQRS, Clean Architecture, and Vertical Slice.
+- Generate production-ready code only.
+- Do not introduce breaking architectural changes.
+- End with a code quality audit.
+
 ## User Input
 
 ```text

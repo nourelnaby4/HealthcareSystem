@@ -9,6 +9,18 @@ handoffs:
     prompt: Clarify specification requirements
     send: true
 ---
+# Mandatory Context
+
+Before creating any specification you MUST:
+
+1. Read every relevant document under `/docs`.
+2. Read `.specify/memory/constitution.md`.
+3. Review existing specifications.
+4. Inspect the related backend and frontend modules.
+5. Reuse existing patterns.
+6. Do not duplicate existing functionality.
+7. Ask clarification questions if any business rule is ambiguous.
+8. Generate a Specification Audit before finishing.
 
 ## User Input
 
