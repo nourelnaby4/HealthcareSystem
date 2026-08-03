@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>Healthcare.Administration.UnitTests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Bogus" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Modules\Administration\Healthcare.Administration.Domain\Healthcare.Administration.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Administration\Healthcare.Administration.Application\Healthcare.Administration.Application.csproj" />
+    <ProjectReference Include="..\..\src\Shared\Healthcare.Shared.Kernel\Healthcare.Shared.Kernel.csproj" />
+  </ItemGroup>
+
+</Project>

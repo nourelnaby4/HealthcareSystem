@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Healthcare.Administration.IntegrationEvents</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\Healthcare.Shared.Kernel\Healthcare.Shared.Kernel.csproj" />
+    <ProjectReference Include="..\..\Shared\Healthcare.Shared.IntegrationBus\Healthcare.Shared.IntegrationBus.csproj" />
+  </ItemGroup>
+
+</Project>

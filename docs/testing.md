@@ -63,8 +63,9 @@ Prefer many fast unit tests, fewer integration tests, and meaningful coverage at
 
 ## 6. Frontend (Angular)
 
+- Test runner: **Vitest** via `@angular/build:unit-test` (Karma is not used).
 - Spec files: `*.spec.ts` colocated with the component/service.
-- CI runs `npm test -- --watch=false` only if specs exist.
+- CI runs `npm test -- --watch=false` (Vitest) — executes all `*.spec.ts`.
 - Test standalone components in isolation; mock HTTP via the testing `HttpClient`.
 
 ---

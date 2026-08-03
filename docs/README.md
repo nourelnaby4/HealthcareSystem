@@ -10,7 +10,7 @@ All project documentation lives here. The **Standards** section lists controlled
 | 🖥️ Frontend Architecture | [frontend-architecture.md](./frontend-architecture.md) | Angular modular structure, layouts/pages/modules, Tailwind+HTML+SCSS, interceptors/interfaces |
 | 💻 Coding Standards | [coding-standards.md](./coding-standards.md) | SOLID/DRY/KISS/YAGNI, code quality, errors, logging, async, git |
 | 🧩 Backend Guidelines | [backend-guidelines.md](./backend-guidelines.md) | .NET 10, Minimal APIs, CQRS, EF Core, PostgreSQL, performance |
-| 🅰️ Angular Guidelines | [angular-guidelines.md](./angular-guidelines.md) | Angular 20, standalone components, Signals, Tailwind, RxJS |
+| 🅰️ Angular Guidelines | [angular-guidelines.md](./angular-guidelines.md) | Angular 22, standalone components, Signals, Tailwind, RxJS |
 | 🌐 API Design | [api-design.md](./api-design.md) | REST verbs, status codes, ProblemDetails, pagination/versioning |
 | 🔒 Security | [security.md](./security.md) | AuthN/AuthZ, OWASP, PHI handling, secrets, ACL |
 | 🧪 Testing | [testing.md](./testing.md) | Test pyramid, unit/integration, coverage, idempotency |

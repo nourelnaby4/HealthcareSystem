@@ -1,7 +1,7 @@
 # Angular Guidelines
 
 **Status**: Controlled standard — enforced by [Constitution Principles 16 (Angular), 17 (UI)](../.specify/memory/constitution.md)
-**Applies to**: `frontend/healthcare-web` — Angular 20.
+**Applies to**: `frontend/healthcare-web` — Angular 22.
 
 > **Architecture & styling stack** (folder structure, layouts/pages/modules/interceptors/interfaces, Tailwind + HTML + SCSS) are defined in [frontend-architecture.md](./frontend-architecture.md). This document defines the **coding rules**.
 
@@ -11,7 +11,7 @@
 
 | Concern | Choice |
 |---------|--------|
-| Framework | **Angular 20** |
+| Framework | **Angular 22** |
 | Components | **Standalone components** (no NgModules) |
 | Template | **HTML** (`.html`) — one template file per component |
 | Styling | **Tailwind CSS** + **SCSS** (`.scss`) component-scoped |

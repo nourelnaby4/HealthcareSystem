@@ -1,7 +1,8 @@
 <!--
 Sync Impact Report
 ==================
-Version change: 1.0.0 (unversioned baseline) → 1.1.0 → 1.2.0 → 1.3.0
+Version change: 1.0.0 (unversioned baseline) → 1.1.0 → 1.2.0 → 1.3.0 → 1.3.1
+  - 1.3.0 → 1.3.1 (PATCH): corrected stack drift — Angular `20 → 22` and frontend test runner `Karma → Vitest` (@angular/build:unit-test) across the constitution (Principle 16) and controlled documents docs/angular-guidelines.md, docs/frontend-architecture.md, docs/testing.md, docs/README.md. The repo runs Angular 22 + Vitest (a superset); governance now matches the installed toolchain (spec task T001).
 Bump type:
   - 1.0.0 → 1.1.0 (MINOR): added the Standards Reference (Controlled Documents) catalog and the Governance section.
   - 1.1.0 → 1.2.0 (MINOR): materially expanded docs/angular-guidelines.md — mandated Tailwind + HTML templates + SCSS, and the full modular architecture (core, interceptors, shared, layouts, interfaces, features → pages/components/services/routes).
@@ -373,7 +374,7 @@ No placeholder tests.
 
 Frontend uses:
 
-Angular 20
+Angular 22
 
 Standalone Components
 
@@ -576,4 +577,4 @@ This Constitution is the supreme authority for all generated work in the project
 
 ---
 
-**Version**: 1.3.0 | **Ratified**: 2026-08-01 | **Last Amended**: 2026-08-01
+**Version**: 1.3.1 | **Ratified**: 2026-08-01 | **Last Amended**: 2026-08-03

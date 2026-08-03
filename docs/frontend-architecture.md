@@ -1,7 +1,7 @@
 # Frontend Architecture
 
 **Status**: Controlled standard — enforced by [Constitution Principles 16 (Angular), 17 (UI)](../.specify/memory/constitution.md)
-**Applies to**: `frontend/healthcare-web` — the Angular 20 frontend. Companion to [angular-guidelines.md](./angular-guidelines.md) (rules) and [architecture.md](./architecture.md) (system/backend).
+**Applies to**: `frontend/healthcare-web` — the Angular 22 frontend. Companion to [angular-guidelines.md](./angular-guidelines.md) (rules) and [architecture.md](./architecture.md) (system/backend).
 
 ---
 
@@ -9,7 +9,7 @@
 
 | Concern | Choice |
 |---------|--------|
-| Framework | **Angular 20** |
+| Framework | **Angular 22** |
 | Components | **Standalone components** (no NgModules) |
 | Template | **HTML** (`.html`) — one template file per component |
 | Styling | **Tailwind CSS** (utility-first) + **SCSS** (`.scss`) component-scoped |

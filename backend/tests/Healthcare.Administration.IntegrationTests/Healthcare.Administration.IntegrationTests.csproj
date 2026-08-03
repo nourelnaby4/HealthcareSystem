@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>Healthcare.Administration.IntegrationTests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Bogus" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Bootstrapper\Healthcare.Api\Healthcare.Api.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Administration\Healthcare.Administration.Infrastructure\Healthcare.Administration.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Administration\Healthcare.Administration.Api\Healthcare.Administration.Api.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Administration\Healthcare.Administration.Application\Healthcare.Administration.Application.csproj" />
+  </ItemGroup>
+
+</Project>

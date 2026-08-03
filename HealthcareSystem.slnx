@@ -4,6 +4,25 @@
   <Folder Name="/backend/src/Bootstrapper/">
     <Project Path="backend/src/Bootstrapper/Healthcare.Api/Healthcare.Api.csproj" />
   </Folder>
+  <Folder Name="/backend/src/Shared/">
+    <Project Path="backend/src/Shared/Healthcare.Shared.Kernel/Healthcare.Shared.Kernel.csproj" />
+    <Project Path="backend/src/Shared/Healthcare.Shared.IntegrationBus/Healthcare.Shared.IntegrationBus.csproj" />
+    <Project Path="backend/src/Shared/Healthcare.Shared.Outbox/Healthcare.Shared.Outbox.csproj" />
+  </Folder>
+  <Folder Name="/backend/src/Modules/" />
+  <Folder Name="/backend/src/Modules/Administration/">
+    <Project Path="backend/src/Modules/Administration/Healthcare.Administration.Domain/Healthcare.Administration.Domain.csproj" />
+    <Project Path="backend/src/Modules/Administration/Healthcare.Administration.Application/Healthcare.Administration.Application.csproj" />
+    <Project Path="backend/src/Modules/Administration/Healthcare.Administration.IntegrationEvents/Healthcare.Administration.IntegrationEvents.csproj" />
+    <Project Path="backend/src/Modules/Administration/Healthcare.Administration.Infrastructure/Healthcare.Administration.Infrastructure.csproj" />
+    <Project Path="backend/src/Modules/Administration/Healthcare.Administration.Api/Healthcare.Administration.Api.csproj" />
+  </Folder>
+  <Folder Name="/backend/tests/">
+    <Project Path="backend/tests/Healthcare.Shared.UnitTests/Healthcare.Shared.UnitTests.csproj" />
+    <Project Path="backend/tests/Healthcare.Administration.UnitTests/Healthcare.Administration.UnitTests.csproj" />
+    <Project Path="backend/tests/Healthcare.Administration.IntegrationTests/Healthcare.Administration.IntegrationTests.csproj" />
+    <Project Path="backend/tests/Healthcare.Architecture.Tests/Healthcare.Architecture.Tests.csproj" />
+  </Folder>
   <Folder Name="/frontend/" />
   <Folder Name="/docker/" />
   <Folder Name="/docs/" />

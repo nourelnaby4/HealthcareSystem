@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Healthcare.Administration.Api</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Healthcare.Administration.Application\Healthcare.Administration.Application.csproj" />
+    <ProjectReference Include="..\Healthcare.Administration.IntegrationEvents\Healthcare.Administration.IntegrationEvents.csproj" />
+  </ItemGroup>
+
+</Project>
