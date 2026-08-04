@@ -1,11 +1,6 @@
 using System.Text.RegularExpressions;
 
 namespace Healthcare.Shared.Kernel.ValueObjects;
-
-/// <summary>
-/// A phone number in an E.164-ish representation. Only digits and <c>+ - ( )</c> / spaces are
-/// permitted; length is bounded. No country normalization is performed in phase 1.
-/// </summary>
 public sealed partial record Phone
 {
     private const int MaxLength = 20;

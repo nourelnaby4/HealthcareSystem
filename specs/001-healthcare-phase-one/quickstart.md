@@ -89,12 +89,10 @@ Each scenario references the contract it exercises and the outcome required by t
 2. The suspended user's existing token is rejected (re-auth fails) → **401**.
 - *Contract*: [users.api.md](./contracts/users.api.md), [auth.api.md](./contracts/auth.api.md).
 
-### V7 — Integration event is reliable & idempotent *(spec FR12; architecture §7)*
-1. Register a patient → assert an `OutboxMessage(type=PatientAdmitted)` row was written **in the same transaction** as the patient (see [data-model.md](./data-model.md) §Outbox).
-2. Run/observe the hosted dispatcher → the row is marked processed; a test consumer records the `id` in `InboxMessage`.
-3. Redeliver the same message id → the consumer applies **no second effect** (idempotent).
+### V7 — `PatientAdmitted` event is published *(spec FR12)*
+1. Register a patient → assert the `PatientAdmitted` notification was published in-process (the contract is defined; no production consumer ships yet).
 - *Contract*: [patient-admitted.integration.md](./contracts/patient-admitted.integration.md).
-> This is the primary automated test of the foundation even though no production consumer exists yet.
+> Durable at-least-once/idempotent delivery (Outbox/Inbox) is deferred to the phase that adds a cross-module consumer.
 
 ### V8 — Facility management *(spec FR9)*
 1. `POST /api/v1/facilities` (Administrator) → **201**; list + deactivate succeed.

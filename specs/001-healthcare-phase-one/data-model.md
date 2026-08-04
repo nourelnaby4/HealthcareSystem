@@ -1,6 +1,6 @@
 # Data Model — Healthcare System Phase 1 (Foundation & Administration)
 
-**Phase 1 output**. Schemas live in PostgreSQL: the `administration` schema (module-owned) and the `integration` schema (Outbox/Inbox, owned by the `Shared` kernel). All ids are strongly-typed (`UserId`, `PatientId`, …) backed by `Guid`; aggregates enforce invariants in the Domain layer; EF mappings live in Infrastructure (Domain is persistence-ignorant). Naming follows [naming.md](../../docs/naming.md).
+**Phase 1 output**. Schema lives in PostgreSQL: the `administration` schema (module-owned). All ids are strongly-typed (`UserId`, `PatientId`, …) backed by `Guid`; aggregates enforce invariants in the Domain layer; EF mappings live in Infrastructure (Domain is persistence-ignorant). Naming follows [naming.md](../../docs/naming.md). Strongly-typed IDs are owned by their bounded context (`Administration.Domain`); the shared kernel holds only the generic `Id` base.
 
 > This model covers the Administration module + Shared kernel only. Clinical/Laboratory/Pharmacy/Insurance aggregates arrive in later phases.
 
@@ -15,7 +15,6 @@
 | Patient | `Patient` | one patient's demographics + immutable MRN | `administration` |
 | Facility | `Facility` | one care location | `administration` |
 | Audit | `AuditEntry` | one immutable access record | `administration` |
-| (kernel) | Outbox / Inbox rows | reliable integration delivery | `integration` |
 
 `Permission` is a **value object** (a claim string, e.g. `patients.write`), not an aggregate. `RoleAssignment` is modeled as the `User`↔`Role` many-to-many link owned by `User`.
 
@@ -100,7 +99,7 @@ Seed permission catalog (examples): `users.manage`, `roles.manage`, `patients.wr
 | Field | Type | Notes / validation |
 |-------|------|--------------------|
 | `Id` | `PatientId` (Guid) | PK. |
-| `Mrn` | string | **Unique**, system-generated, immutable; format `<FAC>-NNNNNN` + check digit; unique index. |
+| `Mrn` | string | **Unique**, system-generated, immutable; sequential format (e.g. `MRN-000001`); unique index. |
 | `FirstName` / `LastName` | string | 1–100 chars. |
 | `DateOfBirth` | DateOnly VO | Not in future; not > 130 yrs ago. |
 | `Gender` | `Gender` enum? | `Male`\|`Female`\|`Other`\|`Unknown`. |
@@ -169,28 +168,9 @@ Seed permission catalog (examples): `users.manage`, `roles.manage`, `patients.wr
 
 ---
 
-## Kernel: Outbox / Inbox (`integration` schema)
+## Integration contract (no Phase-1 persistence)
 
-**OutboxMessage**
-
-| Field | Type | Notes |
-|-------|------|------|
-| `Id` | Guid | PK = message id (idempotency key). |
-| `Type` | string | Contract type name, e.g. `PatientAdmitted`. |
-| `Payload` | string | Serialized JSON (versioned contract). |
-| `OccurredAt` | DateTimeOffset | — |
-| `ProcessedAt` | DateTimeOffset? | Null = pending. |
-| `RetryCount` | int | — |
-
-**InboxMessage** (consumer dedupe)
-
-| Field | Type | Notes |
-|-------|------|------|
-| `Id` | Guid | PK = incoming message id. |
-| `Type` | string | — |
-| `ProcessedAt` | DateTimeOffset | — |
-
-**Behavior:** written in the same transaction as domain changes; a hosted dispatcher publishes pending rows to in-process handlers; consumers check `InboxMessage` to ensure exactly-once effect despite at-least-once delivery.
+`PatientAdmitted` is a plain in-process contract (MediatR `INotification`) — it carries **no** Outbox/Inbox tables in Phase 1. Durable at-least-once delivery is added in the phase that introduces a cross-module consumer. See [contracts/patient-admitted.integration.md](./contracts/patient-admitted.integration.md).
 
 ---
 

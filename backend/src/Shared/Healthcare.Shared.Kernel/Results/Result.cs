@@ -1,29 +1,30 @@
 namespace Healthcare.Shared.Kernel.Results;
 
-/// <summary>
-/// Result type for command/query outcomes that produce no value. Carries an <see cref="Error"/>
-/// on failure. Construct via <see cref="Success"/> / <see cref="Failure(Healthcare.Shared.Kernel.Results.Error)"/>.
 /// </summary>
-public readonly record struct Result
+/// <typeparam name="T">The success value type.</typeparam>
+public sealed class Result<T>
 {
     public bool IsSuccess { get; }
     public bool IsFailure => !IsSuccess;
+    public T? Value { get; }
     public Error? Error { get; }
 
-    private Result(bool isSuccess, Error? error)
+    private Result(bool isSuccess, T? value, Error? error)
     {
         IsSuccess = isSuccess;
+        Value = value;
         Error = error;
     }
 
-    public static Result Success() => new(true, null);
+    public static Result<T> Success(T value) => new(true, value, null);
 
-    public static Result Failure(Error error) => new(false, error);
+    public static Result<T> Failure(Error error) => new(false, default, error);
 
-    public static Result Failure(ErrorType type, string code, string message)
-        => new(false, new Error(type, code, message));
+    public static Result<T> Failure(ErrorType type, string code, string message)
+        => new(false, default, new Error(type, code, message));
 
-    public Result<T> ToResult<T>() => IsSuccess
-        ? throw new InvalidOperationException("Cannot convert a valueless success to a value-carrying result.")
-        : Result<T>.Failure(Error!);
+    public T GetValueOrThrow()
+        => IsSuccess ? Value! : throw new ResultFailureException(Error!);
+
+    public static implicit operator Result<T>(T value) => Success(value);
 }

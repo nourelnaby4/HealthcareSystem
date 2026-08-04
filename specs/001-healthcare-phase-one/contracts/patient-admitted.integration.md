@@ -1,10 +1,10 @@
 # Integration Event Contract: PatientAdmitted (v1)
 
-**Status**: Published by Administration. **No consumer ships in phase 1** (Clinical arrives later); the bus + Outbox/Inbox deliver it reliably so the contract is safe to build now. Versioned: bump to `PatientAdmittedV2` on incompatible change.
+**Status**: Published by Administration via a MediatR `INotification` (in-process). **No consumer ships in Phase 1** (Clinical arrives later). Durable at-least-once delivery (Outbox/Inbox) is deferred to the phase that adds the first consumer. Versioned: bump to `PatientAdmittedV2` on incompatible change.
 
 ## Semantics
 
-Published when a patient is registered by Administration (`PatientRegistered` domain event → Outbox). At-least-once delivery; consumers must be idempotent (dedupe by `id` via the Inbox).
+Published when a patient is registered by Administration. In Phase 1 it is published in-process; when a consumer exists it will be delivered at-least-once and consumers must be idempotent (dedupe by `id`).
 
 ## Message envelope
 
@@ -30,7 +30,7 @@ Published when a patient is registered by Administration (`PatientRegistered` do
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `id` | Guid | Message id = idempotency key; consumers record it in the Inbox. |
+| `id` | Guid | Message id = idempotency key (used for dedupe once durable delivery ships). |
 | `type` | string | Always `PatientAdmitted` for v1. |
 | `version` | int | Contract version. |
 | `occurredAt` | DateTimeOffset (UTC) | When the patient was registered. |
@@ -43,7 +43,7 @@ Published when a patient is registered by Administration (`PatientRegistered` do
 
 ## Delivery guarantees
 
-- **Reliability**: the Outbox row is written in the same DB transaction as the patient; a hosted dispatcher publishes pending rows to the in-process bus.
-- **Idempotency**: consumers insert `InboxMessage(id)` before processing; duplicate redelivery yields exactly one effect.
+- **Phase 1**: published in-process via MediatR in the same request that creates the patient. No Outbox/Inbox tables exist yet.
+- **Future (when a consumer ships)**: Outbox row written in the same transaction; hosted dispatcher publishes; consumers dedupe via `InboxMessage(id)` for exactly-once effect despite at-least-once delivery.
 - **No PHI beyond the snapshot**: payload contains the minimum needed to open an encounter. Consumers translate into their own model (Customer-Supplier `U/D`, Administration upstream).
 - **Privacy**: this event is logged as metadata only (type/id/occurredAt) — the payload is **not** written to application logs.

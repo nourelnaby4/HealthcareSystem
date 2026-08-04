@@ -47,7 +47,7 @@ Register a patient. `mrn` is **not** supplied by the client — the server gener
 }
 ```
 
-**422** — business validation (e.g., future date of birth). Emits `PatientRegistered` → writes `PatientAdmitted` to the Outbox (integration contract). The MRN is server-generated and unique, so duplicate-MRN creation is impossible; duplicate *demographic* submissions create distinct patients (person-level de-duplication is deferred).
+**422** — business validation (e.g., future date of birth). Emits `PatientRegistered` → publishes `PatientAdmitted` in-process (integration contract). The MRN is server-generated and unique, so duplicate-MRN creation is impossible; duplicate *demographic* submissions create distinct patients (person-level de-duplication is deferred).
 
 ## GET `/api/v1/patients/{id}`  *(perm: `patients.read`)* → `200` / `404`. Emits an audited `patient.view`.
 

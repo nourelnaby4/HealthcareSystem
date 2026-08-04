@@ -1,11 +1,5 @@
-using Healthcare.Shared.Kernel.Domain;
-
 namespace Healthcare.Shared.Kernel.ValueObjects;
 
-/// <summary>
-/// A date of birth. Must be in the past and within a plausible human lifespan (not older than
-/// 130 years). Stored as <see cref="DateOnly"/> for database portability.
-/// </summary>
 public sealed record DateOfBirth
 {
     private const int MaxAgeYears = 130;
@@ -14,9 +8,9 @@ public sealed record DateOfBirth
 
     private DateOfBirth(DateOnly value) => Value = value;
 
-    public static DateOfBirth Create(DateOnly value, IClock? clock = null)
+    public static DateOfBirth Create(DateOnly value)
     {
-        var today = DateOnly.FromDateTime((clock ?? new SystemClock()).UtcNow.DateTime);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
         if (value > today)
         {

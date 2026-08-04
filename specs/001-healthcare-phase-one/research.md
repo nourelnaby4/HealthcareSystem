@@ -49,7 +49,7 @@
 
 ## 5. Patient identity & uniqueness (spec Open Question 2)
 
-**Decision**: Enforce uniqueness on a generated **MRN** (Medical Record Number), system-issued (e.g., sequential + check digit, or a facility-scoped format) and immutable post-creation. Capture optional national/insurance IDs as separate, non-uniqueness-guaranteed fields for now.
+**Decision**: Enforce uniqueness on a generated **MRN** (Medical Record Number), system-issued (sequential format, e.g. `MRN-000001`) and immutable post-creation, backed by a unique DB index. Capture optional national/insurance IDs as separate, non-uniqueness-guaranteed fields for now.
 
 **Rationale**: Spec default assumption = MRN. A system-generated MRN removes receptionist-entered duplicates and is the reliable uniqueness key (spec FR7). National/insurance IDs are deferred until a compliance decision (spec Open Question 3).
 
@@ -67,22 +67,21 @@
 
 ---
 
-## 7. Integration bus & Outbox/Inbox reliability
+## 7. Integration events — publishing now, durable delivery deferred
 
-**Decision**: In-process integration bus (`Shared/IntegrationBus`) with the **Outbox/Inbox** pattern. A command handler writes domain changes + outbox messages in the **same EF transaction**; a background dispatcher (`IHostedService`) reads unsent outbox rows and publishes to in-process subscribers; consumers record processed message ids in the **inbox** for idempotency. Messages carry an idempotency key + versioned contract.
+**Decision**: In Phase 1, `PatientAdmitted` is published via a plain MediatR `INotification` in-process within the request that registers the patient. The durable **Outbox/Inbox** pattern (same-transaction outbox row, hosted dispatcher, inbox idempotency) is **deferred** to the phase that introduces the first cross-module consumer (Clinical).
 
-**Rationale**: Constitution/architecture mandate reliable, at-least-once, idempotent cross-module delivery. In-process bus matches the modular-monolith single-deployable model (no external broker needed yet). Same-transaction outbox guarantees "patient saved ⇔ event recorded" without 2PC.
+**Rationale**: Phase 1 ships a single module with **no subscriber**. Building a dispatcher, `SaveChanges` interceptor, `IntegrationDbContext`, and inbox dedupe for an event with zero consumers is YAGNI. The contract is defined now so a future consumer is safe; durable delivery is added behind a stable `IIntegrationEventPublisher` when needed, without changing existing call sites.
 
-**Alternatives**:
-- *MediatR notifications as the integration bus*: fine for in-process delivery, but not durable — Outbox wraps it for reliability.
-- *External broker (RabbitMQ/Kafka)*: rejected for phase 1 (YAGNI); the abstraction allows adding it later behind `IIntegrationEventPublisher`.
-- *EF `SaveChanges` interceptor vs explicit outbox write*: use MediatR pipeline/SaveChanges interceptor to capture domain events → outbox automatically.
+**Alternatives considered**:
+- *Build Outbox/Inbox now*: rejected — infrastructure with no producer/consumer pair; pure overhead in Phase 1.
+- *External broker (RabbitMQ/Kafka)*: rejected for Phase 1 (YAGNI); the deferred publisher abstraction leaves room to add it later.
 
 ---
 
 ## 8. EF Core multi-schema modular design
 
-**Decision**: One `DbContext` per module, each mapped to its own PostgreSQL schema (`administration`). Each module's context is registered independently; the composition root (`Healthcare.Api`) registers all contexts, runs their migrations, and wires the bus. The outbox/inbox live in a small shared schema owned by the `Shared` kernel (a dedicated `IntegrationDbContext` or co-located table) — modules publish/consume via abstractions, never reaching another module's schema.
+**Decision**: One `DbContext` per module, each mapped to its own PostgreSQL schema (`administration`). Each module's context is registered independently; the composition root (`Healthcare.Api`) registers all contexts and runs their migrations. Modules never reach another module's schema.
 
 **Rationale**: Constitution Principle 2/6 — modules never cross-query another schema; one schema per module ([backend-guidelines §6](../../docs/backend-guidelines.md)).
 
@@ -134,7 +133,7 @@
 
 ## 14. Performance & observability
 
-**Decision**: `AsNoTracking` + projections for reads; pagination enforced (cap page size, default 20); unique index on MRN; indexes on all FKs; Serilog structured logging with a correlation id middleware; `/health` readiness check (DB + self). Background outbox dispatcher uses a bounded polling interval + cancellation. No request-thread blocking on the bus.
+**Decision**: `AsNoTracking` + projections for reads; pagination enforced (cap page size, default 20); unique index on MRN; indexes on all FKs; Serilog structured logging with a correlation id middleware; `/health` readiness check (DB + self). No request-thread blocking on in-process event publishing.
 
 **Rationale**: Constitution Principles 11/13.
 
@@ -142,4 +141,4 @@
 
 ## Research outcome
 
-All NEEDS CLARIFICATION items resolved. The design proceeds with: JWT + rotating refresh, BCrypt, role+permission claim policies, system-generated unique MRN, in-process bus with Outbox/Inbox, one-schema-per-module DbContexts, Angular 22 + Vitest (constitution amendment), and the REST conventions above. No blockers for Phase 1 design.
+All NEEDS CLARIFICATION items resolved. The design proceeds with: JWT + rotating refresh, BCrypt, role+permission claim policies, system-generated unique MRN, in-process event publishing (Outbox/Inbox deferred until a cross-module consumer exists), one-schema-per-module DbContexts, Angular 22 + Vitest (constitution amendment), and the REST conventions above. No blockers for Phase 1 design.

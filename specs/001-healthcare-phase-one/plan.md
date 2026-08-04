@@ -1,128 +1,126 @@
 # Implementation Plan: Healthcare System — Phase 1 (Foundation & Administration)
 
-**Branch**: `001-healthcare-phase-one` | **Date**: 2026-08-03 | **Spec**: [spec.md](./spec.md)
-
-**Input**: Feature specification from `/specs/001-healthcare-phase-one/spec.md`
+**Branch**: `001-healthcare-phase-one` | **Date**: 2026-08-04 | **Spec**: [spec.md](./spec.md)
 
 ## Summary
 
-Phase 1 stands up the modular-monolith foundation and the first business module, **Administration & Access Control**. The foundation delivers the `Shared` kernel (strongly-typed IDs, `Result`, in-process integration bus, Outbox/Inbox for reliable at-least-once idempotent delivery) and the solution/PostgreSQL skeleton. The Administration module implements identity & access (users, roles, permissions, JWT auth + refresh rotation, role/claim authorization), patient registration & directory, facility management, and PHI access auditing — following DDD + CQRS + Vertical Slice per the governed standards. A matching Angular SPA provides login, patient directory, and user/role management screens. The integration-event contracts (e.g. `PatientAdmitted`) and the bus plumbing ship now; downstream consumers arrive in later phases.
+Phase 1 stands up the modular-monolith foundation and the **Administration** module: staff authentication (JWT + refresh), role/permission authorization, patient registration with a server-generated unique MRN, facility management, and PHI access auditing — exposed through REST and an Angular SPA.
+
+The foundation is deliberately lean: a single `Shared` kernel (IDs, base entity types, value objects) and one `administration` schema. Cross-module messaging infrastructure (durable outbox/inbox, in-process bus) is **deferred** to the phase that introduces a second module and its first real consumer — there is nothing to deliver to in Phase 1, so building it now is premature. The `PatientAdmitted` event is defined as a plain contract and published in-process today; it gains durable delivery only when a subscriber exists.
 
 ## Technical Context
 
-**Language/Version**: C# 13 on **.NET 10** (backend); **TypeScript 6.0** on **Angular 22** (frontend).
+- **Backend**: C# 13 / **.NET 10**, ASP.NET Core Minimal APIs, **EF Core 10** + Npgsql (PostgreSQL), **MediatR** (thin command/query dispatch), **FluentValidation**, JWT bearer auth, **Serilog**, `BCrypt.Net-Next`.
+- **Frontend**: **Angular 22** standalone components + **Signals**, Reactive Forms, **Tailwind CSS 4**, **Vitest**. TypeScript 6.
+- **Storage**: **PostgreSQL** — one schema per module. Phase 1 creates the `administration` schema.
+- **Testing**: xUnit + FluentAssertions; EF integration tests against Testcontainers PostgreSQL; unit tests use the EF InMemory provider. Frontend: Vitest colocated `*.spec.ts`.
+- **Errors**: exceptions → RFC 9457 ProblemDetails middleware; no stack traces; safe messages; a `traceId` on every error.
+- **Performance**: patient-directory reads p95 < 300 ms (pagination + `AsNoTracking` + projection); login p95 < 500 ms.
+- **Constraints**: default-deny authorization; PHI never logged; HTTPS only; every async method forwards `CancellationToken`. **Every schema change ships as an EF Core migration that must generate cleanly *and* apply successfully to PostgreSQL** (`dotnet ef migrations add` + `database update`); the bootstrapper applies pending migrations on startup against a real database (never the EF InMemory provider for schema/migration verification).
+- **Scope**: 1 module + kernel; ~6 aggregates; ~20 REST endpoints; ~8 Angular pages.
 
-> ⚠️ The constitution/standards cite **Angular 20** and Karma-based testing, but the repo (`frontend/healthcare-web/package.json`) is on **Angular 22**, TypeScript 6.0.2, and **Vitest**. See Constitution Check §16/15 and [research.md](./research.md) — recommendation is to amend the constitution to the installed versions (a superset), not downgrade.
+## Scope
 
-**Primary Dependencies**:
-- *Backend*: ASP.NET Core Minimal APIs, **MediatR** (CQRS), **FluentValidation**, **EF Core 10** + `Npgsql.EntityFrameworkCore.PostgreSQL`, `Microsoft.AspNetCore.Authentication.JwtBearer`, **Serilog** (structured logging), `AspNetCore.HealthChecks`, `BCrypt.Net-Next` (password hashing), `OpenIddict` or hand-rolled JWT issuance (see research.md).
-- *Frontend*: Angular 22 standalone components, **Signals**, Reactive Forms, Tailwind CSS 4, RxJS 7, Vitest.
+**In scope**: staff auth & sessions; users, roles, permissions; patient registration & directory; facilities; audit log; Angular login/directory/management screens; health check + structured logging; seeded bootstrap admin with forced password change.
 
-**Storage**: **PostgreSQL** — one schema per module. Phase 1 creates the `administration` schema (identity, patients, facilities, audit) plus the cross-module `outbox`/`inbox` tables (owned by the `Shared` kernel).
+**Out of scope** (deferred): Clinical, Laboratory, Pharmacy, Insurance modules; durable outbox/inbox + in-process integration bus; 3rd-party Insurance ACL; downstream reactions to `PatientAdmitted`; patient portal; scheduling/billing; notifications.
 
-**Testing**: **xUnit** + FluentAssertions (+ Coverlet for CI coverage); EF with a per-test database (Testcontainers PostgreSQL for integration, EF InMemory/in-memory provider only for pure unit). Frontend: **Vitest** (`@angular/build:unit-test`), `*.spec.ts` colocated.
+## Architecture Decisions
 
-**Target Platform**: Linux container (Docker) for the API; evergreen browsers for the SPA; PostgreSQL 16+ container.
+Deliberate simplifications vs. the earlier plan (and the standards docs). Each keeps the functional requirement while removing premature layers.
 
-**Project Type**: web-service (modular monolith API) + web-app (Angular SPA).
+| Decision | Rationale |
+|----------|-----------|
+| **No Outbox/Inbox in Phase 1.** `PatientAdmitted` is a plain record published via a single MediatR `INotification` in-process. | FR12 targets *future* cross-module delivery. Phase 1 has one module and zero consumers, so a durable dispatcher, interceptor, and inbox are pure overhead. Add them in the phase that introduces a second module. |
+| **No separate `IntegrationBus` / `Outbox` projects.** Contracts live in `Administration.IntegrationEvents`; the kernel is one project. | Two empty infrastructure projects for an unused bus add ceremony and reference complexity. |
+| **Exceptions over `Result<T>`.** Domain throws; a global middleware maps to ProblemDetails. | `Result` wrapping adds ceremony with no benefit when ASP.NET Core already standardizes error translation. |
+| **No Architecture Tests / NetArchTest.** Dependency direction is enforced by project references; no test project. | A whole test project to assert what `csproj` references already guarantee is low value. |
+| **Audit written directly in handlers** (or a minimal action filter for PHI reads), not a MediatR pipeline behavior. | A dedicated pipeline behavior + interface for one cross-cutting concern is heavier than the call site. |
+| **MRN = simple sequential/formatted generator** (e.g. `MRN-000001`), uniqueness guaranteed by a DB unique index. | Check-digit algorithms are over-engineering for Phase 1 uniqueness, which the index already guarantees. |
+| **Typed IDs owned by their bounded context.** Only the generic `Id` base type lives in the shared kernel; concrete IDs (`UserId`, `RoleId`, `PatientId`, `FacilityId`) live in `Administration.Domain`, colocated with their aggregates. | Keeps the kernel module-agnostic so it isn't coupled to Administration concepts; each module owns its identifiers. EF Core value converters live in the module's Infrastructure (needs EF Core), never in the kernel. |
 
-**Performance Goals**: patient-directory query p95 < 300 ms for paginated reads; login p95 < 500 ms; tolerate hundreds of concurrent staff; integration-event dispatch without request-thread blocking (Outbox dispatcher).
+## Functional Requirements → Approach
 
-**Constraints**: default-deny authorization; PHI never logged; no synchronous DB calls; every async method forwards `CancellationToken`; HTTPS only; safe `ProblemDetails` errors; idempotent event consumers.
-
-**Scale/Scope**: 1 module (Administration) + `Shared` kernel; ~6 aggregates; ~20 REST endpoints; ~8 routed Angular pages; Outbox/Inbox reliability for future cross-module events.
-
-## Constitution Check
-
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
-
-| # | Principle | Status | Notes |
-|---|-----------|--------|-------|
-| 1 | Architecture First | ✅ PASS | Modular monolith + DDD + Clean + Vertical Slice + CQRS by design. |
-| 2 | Module Isolation | ✅ PASS | Modules communicate via commands/queries/events only; no cross-schema access. Outbox/Inbox isolates integration. |
-| 3 | DDD | ✅ PASS | Business logic in Domain; aggregates enforce invariants; value objects; domain events. |
-| 4 | CQRS | ✅ PASS | Each mutation = Command + Validator + Handler + Response + Endpoint. Queries read-only. |
-| 5 | Vertical Slice | ✅ PASS | `Patient/CreatePatient/`, `Patient/UpdatePatient/`, … per slice. |
-| 6 | Dependency Rules | ✅ PASS | Api → Application → Domain; Infrastructure points inward; Domain persistence-ignorant. |
-| 7 | Backend Standards | ✅ PASS | .NET 10, Minimal APIs, MediatR, FluentValidation, EF Core, PostgreSQL, DI. Adds required NuGet packages (none installed yet — expected for greenfield). |
-| 8 | API Design | ✅ PASS | REST, ProblemDetails, pagination/filtering/sorting/search, `/api/v1/...` versioning, OpenAPI. |
-| 9 | Validation | ✅ PASS | FluentValidation per command; IDs/dates/length/required/business rules. |
-| 10 | Error Handling | ✅ PASS | ProblemDetails; no stack traces; safe messages; server-side logging. |
-| 11 | Logging | ✅ PASS | Serilog structured logging; never passwords/secrets/tokens/PHI. |
-| 12 | Security | ✅ PASS | AuthN (JWT) + AuthZ (role + claim policies), HTTPS, input validation, output encoding, parameterized queries, OWASP. |
-| 13 | Performance | ✅ PASS | Pagination, projections, `AsNoTracking`, avoid N+1, efficient LINQ. |
-| 14 | Database | ✅ PASS | EF Core migrations; one schema per module; indexes on FKs + unique MRN; non-destructive by default. |
-| 15 | Testing | ⚠️ NOTE | Repo uses **Vitest**, not Karma. Doc says `npm test -- --watch=false`. **Action:** amend `docs/testing.md` §6 to Vitest (`@angular/build:unit-test`) — do not downgrade. |
-| 16 | Angular | ⚠️ NOTE | Repo is **Angular 22**; constitution says 20. **Action:** amend constitution/docs `20 → 22` (superset; signals/standalone unchanged). |
-| 17 | UI | ✅ PASS | Responsive, accessible, loading/error/empty/validation states, Tailwind. |
-| 18 | Naming | ✅ PASS | PascalCase C#, `_camelCase` fields, `I` interfaces, kebab-case routes/files, past-tense events, imperative commands, strongly-typed IDs. |
-| 19 | Code Quality | ✅ PASS | SOLID/DRY/KISS/YAGNI/Boy Scout. |
-| 20–23 | Docs / AI / Git / Output | ✅ PASS | Public APIs documented (OpenAPI); conventional commits; compiles; no placeholders. |
-
-**Gate result: PASS.** Two items (15, 16) are **documentation drift** (repo ahead of constitution), not violations — resolved by constitution amendment (see research.md). No unjustified violations; no Complexity Tracking entries required.
-
-**Post-design re-check (after Phase 1 artifacts):** ✅ PASS — the [data model](./data-model.md), [contracts](./contracts/README.md), and [quickstart](./quickstart.md) introduce no new violations. DDD invariants, CQRS slices, module isolation (Outbox/Inbox, no cross-schema access), REST/ProblemDetails/pagination/versioning, default-deny auth + audit, one-schema-per-module with migrations + indexes, and reliable idempotent events all conform. Only outstanding items remain the two documentation amendments (Angular `20→22`, Karma→Vitest).
+| FR | Phase 1 approach |
+|----|------------------|
+| FR1 Auth (JWT + refresh rotation) | Access token (~15 min) + server-stored hashed refresh token, single-use, rotated on refresh. |
+| FR2 Role+permission authZ (server + UI) | Permission-claim policies on endpoints; UI gates via role/permission signals. Default-deny. |
+| FR3 Admin user lifecycle | Create/suspend/reactivate user commands; role assignment diff. |
+| FR4 Roles & permissions | Role CRUD; permissions as claim strings; system roles protected. |
+| FR5 Default roles | Seed Administrator / Receptionist / Clinician. |
+| FR6 Patient registration + validation | FluentValidation on create command; reject with 422 on bad demographics. |
+| FR7 Server-generated unique MRN | Generated server-side (never client-supplied) + unique DB index. |
+| FR8 Patient directory search/filter/sort/paginate | Query with `AsNoTracking` projection + `?page&pageSize&q&sort&status`. |
+| FR9 Facility management | Facility CRUD + deactivate. |
+| FR10 Audit log | Append-only `AuditEntry` written on PHI create/view/modify; paginated admin query. |
+| FR11 Identity/permissions as published contract | JWT claims (`sub/role/permission`) are the contract other modules consume. |
+| FR12 Reliable idempotent events | Contract `PatientAdmitted` defined; published in-process now; durable delivery deferred (see Architecture Decisions). |
+| FR13 Health + structured logging | `/health` (self + DB); Serilog; no PHI/secrets in logs. |
+| FR14 HTTPS + safe errors | HTTPS redirect + HSTS; ProblemDetails only. |
+| FR15 Web UI | Angular login, patient directory, user/role/facility/audit screens with loading/error/empty/validation states. |
+| FR16 Seeded admin + forced change | Bootstrap admin from secret store, `MustChangePassword=true`. |
 
 ## Project Structure
-
-### Documentation (this feature)
-
-```text
-specs/001-healthcare-phase-one/
-├── plan.md              # This file (/speckit.plan command output)
-├── research.md          # Phase 0 output (/speckit.plan command)
-├── data-model.md        # Phase 1 output (/speckit.plan command)
-├── quickstart.md        # Phase 1 output (/speckit.plan command)
-├── contracts/           # Phase 1 output (/speckit.plan command)
-└── tasks.md             # Phase 2 output (/speckit.tasks command - NOT created by /speckit.plan)
-```
-
-### Source Code (repository root)
 
 ```text
 backend/
 ├── src/
-│   ├── Bootstrapper/
-│   │   └── Healthcare.Api/              # composition root: DI wiring, auth, bus, migrations host, health
-│   │       ├── Program.cs
-│   │       └── appsettings.json
-│   ├── Modules/
-│   │   └── Administration/
-│   │       ├── Domain/                  # User, Role, Permission, Patient, Facility, AuditEntry + Events
-│   │       ├── Application/             # Commands, Validators, Handlers, Policies, Projections (read models)
-│   │       ├── Infrastructure/          # AdministrationDbContext, repositories, EF mappings, password hasher
-│   │       ├── Api/                     # Minimal API endpoint modules (/api/v1/...)
-│   │       └── IntegrationEvents/       # PatientAdmitted (published contract)
-│   └── Shared/
-│       ├── Kernel/                      # Base types, strongly-typed IDs (UserId, PatientId...), Result
-│       ├── IntegrationBus/              # in-process pub/sub abstractions (IIntegrationEvent, IIntegrationEventHandler)
-│       └── Outbox/                      # Outbox/Inbox tables, dispatcher, idempotency
+│   ├── Bootstrapper/Healthcare.Api/         # composition root: DI, auth, middleware, migrations, /health, OpenAPI
+│   ├── Modules/Administration/
+│   │   ├── Domain/                          # aggregates (User, Role, Patient, Facility, AuditEntry) + their typed IDs (UserId, RoleId, PatientId, FacilityId)
+│   │   ├── Application/                     # Commands, Queries, Validators, Handlers (MediatR)
+│   │   ├── Infrastructure/                  # AdministrationDbContext, EF configs + ID value converters, password hasher, token service, authorization
+│   │   ├── Api/                             # Minimal API endpoint modules (/api/v1/...)
+│   │   └── IntegrationEvents/               # PatientAdmitted contract (plain record)
+│   └── Shared/Healthcare.Shared.Kernel/     # generic Id base, Entity/AggregateRoot, value objects (Email, Phone, Address, DateOfBirth, Mrn)
 └── tests/
     ├── Administration.UnitTests/
-    ├── Administration.IntegrationTests/
-    └── Shared.UnitTests/
+    └── Administration.IntegrationTests/
 
-frontend/healthcare-web/src/
-├── main.ts
-├── styles.scss                          # global styles + Tailwind layers/design tokens
-└── app/
-    ├── app.component.html|.scss|.ts     # root shell (<router-outlet>)
-    ├── app.routes.ts                    # top-level routes → lazy layouts/features
-    ├── app.config.ts                    # provideHttpClient, provideRouter, interceptors
-    ├── core/                            # interceptors (auth, error), guards (auth, role), services (auth)
-    ├── shared/                          # presentational components (buttons, tables, cards), pipes
-    ├── layouts/                         # main-layout (header+sidebar), auth-layout (centered card)
-    ├── interfaces/                      # DTO types: user, role, patient, facility, audit, common/
-    └── features/
-        ├── auth/                        # login page (+ change-password)
-        ├── administration/              # users, roles, facilities, audit pages
-        └── patients/                    # patient directory + register patient
+frontend/healthcare-web/src/app/
+├── app.config.ts | app.routes.ts            # provideHttpClient(+interceptors), provideRouter; lazy routes
+├── core/                                    # auth service, interceptors (auth, error), guards (auth, role)
+├── shared/                                  # presentational components (button, table, card, pagination, form-field)
+├── layouts/                                 # main-layout (header+sidebar), auth-layout (centered card)
+├── interfaces/                              # DTO types
+└── features/
+    ├── auth/                                # login, change-password
+    ├── patients/                            # directory + register + detail
+    └── administration/                      # users, roles, facilities, audit
 ```
 
-**Structure Decision**: Web application (Option 2 variant) — a modular-monolith backend under `backend/src/{Bootstrapper,Modules,Shared}` (per [docs/event-storming/05-module-mapping.md](../../docs/event-storming/05-module-mapping.md) and [docs/architecture.md](../../docs/architecture.md) §4) and the Angular SPA under `frontend/healthcare-web/src/app` with the layered modular structure from [docs/frontend-architecture.md](../../docs/frontend-architecture.md) §3. Phase 1 delivers the `Administration` module and `Shared` kernel only; later phases append `Clinical`, `Laboratory`, `Pharmacy`, `Insurance` modules and their SPA feature folders.
+**Shape**: modular monolith under `backend/src/{Bootstrapper,Modules,Shared}` and the Angular SPA under `frontend/healthcare-web/src/app`. Dependency direction is enforced by project references: `Api → Application → Domain`; `Infrastructure → Domain/Application`; `Domain` depends only on the kernel. Later phases append their module folders.
 
-## Complexity Tracking
+## Standards Alignment
 
-> **Fill ONLY if Constitution Check has violations that must be justified**
+The governed standards (`docs/`) drive *how* this is built. Two documentation-drift items must be reconciled (repo is ahead of the constitution):
 
-No constitution violations require justification. (Two documentation-drift notes — Angular 22, Vitest — are resolved by amendment, not deviation.)
+- **Angular 20 → 22** and **Karma → Vitest** in `.specify/memory/constitution.md`, `docs/frontend-architecture.md`, `docs/angular-guidelines.md`, `docs/testing.md`.
+- **`styles.css → styles.scss`** in the frontend docs.
+
+The deliberate simplifications in *Architecture Decisions* (no outbox, exceptions over `Result`, no architecture tests) deviate from the most ceremony-heavy reading of the standards in service of KISS/YAGNI; the functional requirements and the modular-monolith + DDD shape are preserved.
+
+## Implementation Phases
+
+Breakdown lives in [tasks.md](./tasks.md). High-level order:
+
+1. **Setup** — solution/projects, NuGet, `Directory.Build.props` + central package management, `docker-compose` Postgres, appsettings, frontend shell + Tailwind; reconcile docs drift.
+2. **Foundation** — kernel (IDs, base types, value objects), `AdministrationDbContext` + schema, global error/logging/health middleware, MediatR + FluentValidation, JWT + permission policies, audit writer, seed (roles + bootstrap admin), frontend core (services, interceptors, guards, layouts, shared components).
+3. **US1 — Authentication** (P1/MVP): login, refresh, change-password, logout, suspended-user block. Checkpoint: bootstrap admin → forced change → protected call.
+4. **US2 — Patients** (P2): register (server MRN), directory (search/filter/sort/paginate), view/update/deactivate, audit on view, publish `PatientAdmitted` in-process.
+5. **US3 — Users & Roles** (P2): user lifecycle, role/permission management, claims flow into tokens.
+6. **US4 — Facilities** (P3): facility CRUD + deactivate.
+7. **US5 — Audit** (P3): paginated/filterable audit log.
+8. **Polish** — `dotnet format` verify, vulnerability scan, frontend build + tests, HTTPS/HSTS/login-rate-limit hardening, README/quickstart link, end-to-end quickstart validation.
+
+## Definition of Done (database)
+
+- All EF Core migrations for the `administration` schema **generate without errors** (`dotnet ef migrations add`).
+- Those migrations **apply successfully to PostgreSQL** (`dotnet ef database update`); the API applies any pending migrations on startup against the configured database (real Postgres — the EF InMemory provider never validates migrations and must not satisfy this gate).
+- On a fresh database the app starts, `/health` reports the DB healthy, and the seed (roles + bootstrap admin) runs idempotently.
+
+## Notes
+
+- Commit per task or logical group (Conventional Commits).
+- Verify the quickstart checkpoint before advancing a user story.
+- When the Clinical module is introduced, revisit FR12: add the durable outbox/inbox behind a stable `IIntegrationEventPublisher` so `PatientAdmitted` gains reliable at-least-once delivery without changing existing call sites.

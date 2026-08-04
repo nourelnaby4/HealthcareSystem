@@ -1,13 +1,8 @@
 namespace Healthcare.Shared.Kernel.ValueObjects;
 
-/// <summary>
-/// A postal address. Every component is bounded in length; street/city/country are required
-/// when an address is supplied (state/postal code are optional to support international addresses).
-/// </summary>
 public sealed record Address
 {
-    private const int ComponentMaxLength = 128;
-    private const int CountryMaxLength = 2;
+    private const int MaxLength = 128;
 
     public string Street { get; }
     public string City { get; }
@@ -16,74 +11,53 @@ public sealed record Address
     public string Country { get; }
 
     private Address(string street, string city, string? state, string? postalCode, string country)
-    {
-        Street = street;
-        City = city;
-        State = state;
-        PostalCode = postalCode;
-        Country = country;
-    }
+        => (Street, City, State, PostalCode, Country) = (street, city, state, postalCode, country);
 
     public static Address Create(string street, string city, string? state, string? postalCode, string country)
-    {
-        if (string.IsNullOrWhiteSpace(country))
-        {
-            throw new ArgumentException("Country is required.", nameof(country));
-        }
-
-        var normalizedCountry = country.Trim().ToUpperInvariant();
-        if (normalizedCountry.Length is < 2 or > CountryMaxLength)
-        {
-            throw new ArgumentException("Country must be a 2-letter ISO code (e.g. EG).", nameof(country));
-        }
-
-        return new Address(
-            street: RequireAndBound(street, nameof(street)),
-            city: RequireAndBound(city, nameof(city)),
-            state: BoundOptional(state),
-            postalCode: BoundOptional(postalCode),
-            country: normalizedCountry);
-    }
+        => new(Field(street), Field(city), Optional(state), Optional(postalCode), NormalizeCountry(country));
 
     public static Address? CreateOrDefault(string? street, string? city, string? state, string? postalCode, string? country)
-    {
-        var hasAny = !string.IsNullOrWhiteSpace(street)
-                     || !string.IsNullOrWhiteSpace(city)
-                     || !string.IsNullOrWhiteSpace(state)
-                     || !string.IsNullOrWhiteSpace(postalCode)
-                     || !string.IsNullOrWhiteSpace(country);
-
-        return hasAny
-            ? Create(street ?? string.Empty, city ?? string.Empty, state, postalCode, country ?? string.Empty)
+        => AnyProvided(street, city, state, postalCode, country)
+            ? Create(street ?? "", city ?? "", state, postalCode, country ?? "")
             : null;
-    }
 
-    private static string RequireAndBound(string? value, string paramName)
+    private static string Field(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            throw new ArgumentException($"{paramName} is required.", paramName);
+            throw new ArgumentException("Value is required.");
         }
 
+        return Bound(value!);
+    }
+
+    private static string? Optional(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : Bound(value!);
+
+    private static string Bound(string value)
+    {
         var trimmed = value.Trim();
-        return trimmed.Length > ComponentMaxLength
-            ? throw new ArgumentException($"{paramName} must be {ComponentMaxLength} characters or fewer.", paramName)
+        return trimmed.Length > MaxLength
+            ? throw new ArgumentException($"Value must be {MaxLength} characters or fewer.")
             : trimmed;
     }
 
-    private static string? BoundOptional(string? value)
+    private static string NormalizeCountry(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            return null;
+            throw new ArgumentException("Country is required.");
         }
 
-        var trimmed = value.Trim();
-        return trimmed.Length > ComponentMaxLength
-            ? throw new ArgumentException($"Address component must be {ComponentMaxLength} characters or fewer.")
-            : trimmed;
+        var normalized = value.Trim().ToUpperInvariant();
+        return normalized.Length == 2
+            ? normalized
+            : throw new ArgumentException("Country must be a 2-letter ISO code (e.g. EG).");
     }
+
+    private static bool AnyProvided(params string?[] values) =>
+        Array.Exists(values, v => !string.IsNullOrWhiteSpace(v));
 
     public override string ToString() =>
-        $"{Street}, {City}{(State is null ? string.Empty : ", " + State)} {PostalCode}, {Country}";
+        $"{Street}, {City}{(State is null ? "" : ", " + State)} {PostalCode}, {Country}";
 }

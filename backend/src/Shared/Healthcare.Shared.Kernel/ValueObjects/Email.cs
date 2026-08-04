@@ -2,9 +2,6 @@ using System.Text.RegularExpressions;
 
 namespace Healthcare.Shared.Kernel.ValueObjects;
 
-/// <summary>
-/// A normalized email address. Stored lower-cased; validated with a pragmatic RFC-ish pattern.
-/// </summary>
 public sealed partial record Email
 {
     private const int MaxLength = 256;
@@ -33,20 +30,6 @@ public sealed partial record Email
         }
 
         return new Email(normalized);
-    }
-
-    public static bool TryCreate(string? value, out Email? email)
-    {
-        try
-        {
-            email = Create(value ?? string.Empty);
-            return true;
-        }
-        catch (ArgumentException)
-        {
-            email = null;
-            return false;
-        }
     }
 
     public override string ToString() => Value;
